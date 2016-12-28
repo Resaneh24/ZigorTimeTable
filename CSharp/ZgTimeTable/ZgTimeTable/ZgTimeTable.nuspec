@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>alisinabh</authors>
+    <owners>alisinabh</owners>
+    <projectUrl>https://github.com/Resaneh24/ZigorTimeTable/tree/master/CSharp</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>$description$</description>
+    <releaseNotes>TimeTables implemented</releaseNotes>
+    <copyright>Copyright 2016</copyright>
+    <tags>timetable zigor</tags>
+  </metadata>
+</package>
