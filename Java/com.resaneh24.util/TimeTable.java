@@ -89,7 +89,7 @@ public class TimeTable extends StandardEntity {
     }
 
     private static boolean isInSession(Session session, long time) {
-        if (time < session.Start || (session.End > 0 && session.End < time)) {
+        if (!session.isInPeriod(time)) {
             return false;
         } else {
             return session.remaining(time) > 0;
@@ -142,7 +142,6 @@ public class TimeTable extends StandardEntity {
         }
 
         public boolean isInPeriod(long time) {
-            return time >= Start && time < End;
+            return time >= Start && (End <= 0 || time < End);
         }
     }
-}
