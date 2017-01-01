@@ -1,7 +1,6 @@
-package com.resaneh24.manmamanam.content.common.entity;
+package com.resaneh24.util;
 
-import com.resaneh24.manmamanam.content.common.logger.Log;
-
+import android.util.Log;
 import java.util.List;
 
 /**
@@ -45,8 +44,19 @@ public class TimeTable extends StandardEntity {
         long nearestTime = Long.MAX_VALUE;
         if (Sessions != null) {
             for (Session session : Sessions) {
-                long s = session.Start % session.Cycle;
-                long t = time % session.Cycle;
+                if (!session.isInPeriod(time)) {
+                    continue;
+                }
+
+                long s;
+                long t;
+                if (session.Cycle <= 0) {
+                    s = session.Start;
+                    t = time;
+                } else {
+                    s = session.Start % session.Cycle;
+                    t = time % session.Cycle;
+                }
 
 //                long end = s + session.Duration;
                 long dif = s - t;
@@ -111,14 +121,28 @@ public class TimeTable extends StandardEntity {
         public long Cycle;
 
         public long remaining(long time) {
-            long t = time % Cycle;
-            long s = Start % Cycle;
+            if (isInPeriod(time)) {
+                return -1;
+            }
+            long s;
+            long t;
+            if (Cycle <= 0) {
+                s = Start;
+                t = time;
+            } else {
+                s = Start % Cycle;
+                t = time % Cycle;
+            }
             if (t < s) {
                 return -1;
             }
             long e = s + Duration;
             long r = e - t;
             return r > 0 ? r : 0;
+        }
+
+        public boolean isInPeriod(long time) {
+            return time >= Start && time < End;
         }
     }
 }
