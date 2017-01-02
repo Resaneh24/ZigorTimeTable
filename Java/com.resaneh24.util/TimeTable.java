@@ -1,7 +1,6 @@
-package com.resaneh24.manmamanam.content.common.entity;
+package com.resaneh24.util;
 
-import com.resaneh24.manmamanam.content.common.logger.Log;
-
+import android.util.Log;
 import java.util.List;
 
 /**
@@ -45,8 +44,19 @@ public class TimeTable extends StandardEntity {
         long nearestTime = Long.MAX_VALUE;
         if (Sessions != null) {
             for (Session session : Sessions) {
-                long s = session.Start % session.Cycle;
-                long t = time % session.Cycle;
+                if (!session.isInPeriod(time)) {
+                    continue;
+                }
+
+                long s;
+                long t;
+                if (session.Cycle <= 0) {
+                    s = session.Start;
+                    t = time;
+                } else {
+                    s = session.Start % session.Cycle;
+                    t = time % session.Cycle;
+                }
 
 //                long end = s + session.Duration;
                 long dif = s - t;
@@ -79,7 +89,7 @@ public class TimeTable extends StandardEntity {
     }
 
     private static boolean isInSession(Session session, long time) {
-        if (time < session.Start || (session.End > 0 && session.End < time)) {
+        if (!session.isInPeriod(time)) {
             return false;
         } else {
             return session.remaining(time) > 0;
@@ -111,8 +121,18 @@ public class TimeTable extends StandardEntity {
         public long Cycle;
 
         public long remaining(long time) {
-            long t = time % Cycle;
-            long s = Start % Cycle;
+            if (isInPeriod(time)) {
+                return -1;
+            }
+            long s;
+            long t;
+            if (Cycle <= 0) {
+                s = Start;
+                t = time;
+            } else {
+                s = Start % Cycle;
+                t = time % Cycle;
+            }
             if (t < s) {
                 return -1;
             }
@@ -120,5 +140,8 @@ public class TimeTable extends StandardEntity {
             long r = e - t;
             return r > 0 ? r : 0;
         }
+
+        public boolean isInPeriod(long time) {
+            return time >= Start && (End <= 0 || time < End);
+        }
     }
-}
