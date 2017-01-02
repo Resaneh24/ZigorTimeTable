@@ -58,9 +58,22 @@ namespace ZgTimeTable
             {
                 foreach (Session session in Sessions)
                 {
-                    long s = session.Start % session.Cycle;
-                    long t = time % session.Cycle;
+                    if (!session.isInPeriod(time))
+                        continue;
 
+                    long s;
+                    long t;
+                    if(session.Cycle <= 0)
+                    {
+                        s = session.Start;
+                        t = time;
+                    }
+                    else
+                    {
+                        s = session.Start % session.Cycle;
+                        t = time % session.Cycle;
+                    }
+                    
                     long dif = s - t;
                     if (dif < 0)
                     {
@@ -143,8 +156,21 @@ namespace ZgTimeTable
 
         public long remaining(long time)
         {
-            long t = time % Cycle;
-            long s = Start % Cycle;
+            if (isInPeriod(time))
+                return -1;
+            
+            long t;
+            long s;
+            if(Cycle <= 0)
+            {
+                s = Start;
+                t = time;
+            }
+            else
+            {
+                s = Start % Cycle;
+                t = time % Cycle;
+            }
             if (t < s)
             {
                 return -1;
@@ -152,6 +178,10 @@ namespace ZgTimeTable
             long e = s + Duration;
             long r = e - t;
             return r > 0 ? r : 0;
+        }
+        public bool isInPeriod(long time)
+        {
+            return time >= Start && time < End;
         }
     }
 }
