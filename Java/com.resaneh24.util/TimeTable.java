@@ -11,7 +11,6 @@ import java.util.List;
 public class TimeTable extends StandardEntity {
     public List<Session> Sessions;
     public List<Session> Exceptions;
-    public String HumanReadable;
 
     public boolean isOpen(long time) {
         return isOpen(this, time);
@@ -61,6 +60,9 @@ public class TimeTable extends StandardEntity {
                 long dif = s - t;
                 if (dif < 0) {
                     dif += session.Cycle;
+                }
+                if (!session.isInPeriod(time + dif)) {
+                    continue;
                 }
                 if (dif > 0) {
                     if (Exceptions != null && !Exceptions.isEmpty()) {
