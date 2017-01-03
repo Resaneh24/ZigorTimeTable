@@ -12,6 +12,16 @@ namespace ZgTimeTable
         public Session[] Exceptions;
         public string HumanReadable;
 
+        public TimeTable()
+        {
+            
+        }
+
+        public TimeTable(Session[] sessions, Session[] Exeptions)
+        {
+            
+        }
+
         public bool isOpen(long time)
         {
             return isOpen(this, time);
