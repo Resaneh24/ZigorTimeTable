@@ -8,7 +8,6 @@ import java.util.List;
  *
  * @author Mahdi Taherian
  */
-
 public class TimeTable extends StandardEntity {
     public List<Session> Sessions;
     public List<Session> Exceptions;
@@ -121,7 +120,7 @@ public class TimeTable extends StandardEntity {
         public long Cycle;
 
         public long remaining(long time) {
-            if (isInPeriod(time)) {
+            if (!isInPeriod(time)) {
                 return -1;
             }
             long s;
@@ -142,6 +141,16 @@ public class TimeTable extends StandardEntity {
         }
 
         public boolean isInPeriod(long time) {
-            return time >= Start && (End <= 0 || time < End);
+            long e;
+            if (Cycle == 0 && End == 0) {
+                e = Start + Duration;
+            } else if (End == 0) {
+                e = Long.MAX_VALUE;
+            } else {
+                e = End;
+            }
+
+            return time >= Start && time < e;
         }
     }
+}
