@@ -72,7 +72,7 @@ public class TimeTable extends StandardEntity {
                                 if (recursiveCount++ > Sessions.size() * Exceptions.size()) {
                                     Log.w("TimeTable", "Problem in recursive calculation.");
                                 } else {
-                                    dif = Math.min(findNearest(Sessions, Exceptions, time + ex.remaining(future)), dif);
+                                    dif = Math.min(findNearest(Sessions, Exceptions, time + ex.remaining(future)) + dif, dif);
                                 }
                             }
                         }
