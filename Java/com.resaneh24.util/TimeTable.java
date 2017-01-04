@@ -1,6 +1,5 @@
 package com.resaneh24.util;
 
-import android.util.Log;
 import java.util.List;
 
 /**
@@ -32,6 +31,21 @@ public class TimeTable extends StandardEntity {
 
             long remaining = currentSession.remaining(time);
             return Math.min(remaining, nearestException);
+        } else {
+            Session currentException = null;
+            for (Session session : Exceptions) {
+                if (isInSession(session, time)) {
+                    currentException = session;
+                    break;
+                }
+            }
+
+            if (currentException != null) {
+                long exRemaining = currentException.remaining(time);
+                if (findCurrentSession(time+exRemaining)!=null) {
+                    return exRemaining;
+                }
+            }
         }
         return findNearest(Sessions, Exceptions, time);
     }
@@ -56,7 +70,6 @@ public class TimeTable extends StandardEntity {
                     t = time % session.Cycle;
                 }
 
-//                long end = s + session.Duration;
                 long dif = s - t;
                 if (dif < 0) {
                     dif += session.Cycle;
@@ -67,21 +80,18 @@ public class TimeTable extends StandardEntity {
                 if (dif > 0) {
                     if (Exceptions != null && !Exceptions.isEmpty()) {
                         long future = time + dif;
-                        for (Session ex : Exceptions) {
+                        long exDif = Long.MAX_VALUE;
+                        for (int i = 0; i < Exceptions.size(); i++, recursiveCount++) {
+                            Session ex = Exceptions.get(i);
                             if (isInSession(ex, future)) {
-                                if (recursiveCount++ > Sessions.size() * Exceptions.size()) {
-                                    Log.w("TimeTable", "Problem in recursive calculation.");
-                                } else {
-                                    dif = Math.min(findNearest(Sessions, Exceptions, time + ex.remaining(future)) + dif, dif);
-                                }
+
+                                exDif = Math.min(nextChange(time + ex.remaining(future)) + dif, exDif);
                             }
                         }
+                        dif = Math.min(exDif, dif);
                     }
                 } else {
                     throw new RuntimeException("Negative time difference: ");
-//                    Log.w("TimeTable", "Negative time difference: " + dif);
-//                    long r = session.remaining(time);
-//                    dif = r;
                 }
                 nearestTime = Math.min(nearestTime, dif);
             }
