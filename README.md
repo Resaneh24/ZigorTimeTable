@@ -13,3 +13,10 @@ ZigorTimeTable is available on Nuget: __ZgTimeTable__
 ```
 Install-Package ZgTimeTable
 ```
+
+### Swift
+ZigorTimeTable is available on CocoaPod:
+add this line to your podfile
+```
+Pod 'ZigorTimeTable'
+```
