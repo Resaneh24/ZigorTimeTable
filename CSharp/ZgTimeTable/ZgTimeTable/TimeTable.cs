@@ -47,50 +47,78 @@ namespace ZgTimeTable
                 long remaining = currentSession.remaining(time);
                 return Math.Min(remaining, nearestException);
             }
+            else
+            {
+                Session currentExpection = null;
+                foreach (Session session in Exceptions)
+                {
+                    if (isInSession(session, time))
+                    {
+                        currentExpection = session;
+                        break;
+                    }
+                }
+                if (currentExpection != null)
+                {
+                    long exRemaining = currentExpection.remaining(time);
+                    if (findCurrentSession(time + exRemaining) != null)
+                        return exRemaining;
+                }
+            }
             return findNearest(Sessions, Exceptions, time);
         }
 
-        private static long findNearest(Session[] Sessions, Session[] Exceptions, long time)
+        private long findNearest(Session[] Sessions, Session[] Exceptions, long time)
         {
-            int recursiveCount = 0;
             long nearestTime = long.MaxValue;
             if (Sessions != null)
             {
                 foreach (Session session in Sessions)
                 {
-                    long s = session.Start % session.Cycle;
-                    long t = time % session.Cycle;
+                    if (!session.isInPeriod(time))
+                        continue;
+
+                    long s;
+                    long t;
+                    if (session.Cycle <= 0)
+                    {
+                        s = session.Start;
+                        t = time;
+                    }
+                    else
+                    {
+                        s = session.Start % session.Cycle;
+                        t = time % session.Cycle;
+                    }
 
                     long dif = s - t;
                     if (dif < 0)
                     {
                         dif += session.Cycle;
                     }
+                    if (!session.isInPeriod(time + dif))
+                        continue;
+
                     if (dif > 0)
                     {
                         if (Exceptions != null && Exceptions.Any())
                         {
                             long future = time + dif;
+                            long exDif = long.MaxValue;
+
                             foreach (Session ex in Exceptions)
                             {
                                 if (isInSession(ex, future))
                                 {
-                                    if (recursiveCount++ > Sessions.Length * Exceptions.Length)
-                                    {
-                                        //Log.w("TimeTable", "Problem in recursive calculation.");
-                                    }
-                                    else {
-                                        dif = Math.Min(findNearest(Sessions, Exceptions, time + ex.remaining(future)), dif);
-                                    }
+                                    exDif = Math.Min(nextChange(time + ex.remaining(future)) + dif, exDif);
                                 }
                             }
+                            dif = Math.Min(exDif, dif);
                         }
                     }
-                    else {
+                    else
+                    {
                         throw new Exception("Negative time difference: ");
-                        //                    Log.w("TimeTable", "Negative time difference: " + dif);
-                        //                    long r = session.remaining(time);
-                        //                    dif = r;
                     }
                     nearestTime = Math.Min(nearestTime, dif);
                 }
@@ -143,8 +171,21 @@ namespace ZgTimeTable
 
         public long remaining(long time)
         {
-            long t = time % Cycle;
-            long s = Start % Cycle;
+            if (isInPeriod(time))
+                return -1;
+            
+            long t;
+            long s;
+            if(Cycle <= 0)
+            {
+                s = Start;
+                t = time;
+            }
+            else
+            {
+                s = Start % Cycle;
+                t = time % Cycle;
+            }
             if (t < s)
             {
                 return -1;
@@ -152,6 +193,18 @@ namespace ZgTimeTable
             long e = s + Duration;
             long r = e - t;
             return r > 0 ? r : 0;
+        }
+        public bool isInPeriod(long time)
+        {
+            long e;
+            if (Cycle == 0 && End == 0)
+                e = Start + Duration;
+            else if (End == 0)
+                e = long.MaxValue;
+            else
+                e = End;
+
+            return time >= Start && time < e;
         }
     }
 }
