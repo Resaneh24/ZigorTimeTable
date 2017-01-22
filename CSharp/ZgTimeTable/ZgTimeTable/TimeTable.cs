@@ -61,6 +61,13 @@ namespace ZgTimeTable
                 if (currentExpection != null)
                 {
                     long exRemaining = currentExpection.remaining(time);
+                    foreach (Session exception in Exceptions)
+                    {
+                        if (isInSession(exception, time + exRemaining))
+                        {
+                            exRemaining += exception.remaining(time + exRemaining);
+                        }
+                    }
                     if (findCurrentSession(time + exRemaining) != null)
                         return exRemaining;
                 }
@@ -92,7 +99,7 @@ namespace ZgTimeTable
                     }
 
                     long dif = s - t;
-                    if (dif < 0)
+                    if (dif <= 0)
                     {
                         dif += session.Cycle;
                     }
@@ -105,15 +112,20 @@ namespace ZgTimeTable
                         {
                             long future = time + dif;
                             long exDif = long.MaxValue;
+                            bool isException = false;
 
                             foreach (Session ex in Exceptions)
                             {
                                 if (isInSession(ex, future))
                                 {
-                                    exDif = Math.Min(nextChange(time + ex.remaining(future)) + dif, exDif);
+                                    isException = true;
+                                    exDif = Math.Min(nextChange(future), exDif);
                                 }
                             }
-                            dif = Math.Min(exDif, dif);
+                            if (isException)
+                                dif = exDif + dif;
+                            else
+                                dif = Math.Min(exDif, dif);
                         }
                     }
                     else
