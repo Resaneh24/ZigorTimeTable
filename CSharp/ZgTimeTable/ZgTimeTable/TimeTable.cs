@@ -183,7 +183,7 @@ namespace ZgTimeTable
 
         public long remaining(long time)
         {
-            if (isInPeriod(time))
+            if (!isInPeriod(time))
                 return -1;
             
             long t;
