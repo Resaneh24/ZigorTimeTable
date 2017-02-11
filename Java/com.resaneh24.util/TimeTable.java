@@ -3,13 +3,14 @@ package com.resaneh24.util;
 import java.util.List;
 
 /**
- * 12/6/2016
+ * 1/4/2017
  *
  * @author Mahdi Taherian
  */
-public class TimeTable extends StandardEntity {
+public class TimeTable {
     public List<Session> Sessions;
     public List<Session> Exceptions;
+    public String HumanReadable;
 
     public boolean isOpen(long time) {
         return isOpen(this, time);
@@ -24,7 +25,6 @@ public class TimeTable extends StandardEntity {
     }
 
     public long nextChange(long time) {
-        recursiveCount = 0;
         Session currentSession = findCurrentSession(time);
         if (currentSession != null) {
             long nearestException = findNearest(Exceptions, null, time);
@@ -42,7 +42,12 @@ public class TimeTable extends StandardEntity {
 
             if (currentException != null) {
                 long exRemaining = currentException.remaining(time);
-                if (findCurrentSession(time+exRemaining)!=null) {
+                for (Session exception : Exceptions) {
+                    if (isInSession(exception, time + exRemaining)) {
+                        exRemaining += exception.remaining(time + exRemaining);
+                    }
+                }
+                if (findCurrentSession(time + exRemaining) != null) {
                     return exRemaining;
                 }
             }
@@ -50,7 +55,6 @@ public class TimeTable extends StandardEntity {
         return findNearest(Sessions, Exceptions, time);
     }
 
-    private int recursiveCount = 0;
 
     private long findNearest(List<Session> Sessions, List<Session> Exceptions, long time) {
         long nearestTime = Long.MAX_VALUE;
@@ -71,7 +75,7 @@ public class TimeTable extends StandardEntity {
                 }
 
                 long dif = s - t;
-                if (dif < 0) {
+                if (dif <= 0) {
                     dif += session.Cycle;
                 }
                 if (!session.isInPeriod(time + dif)) {
@@ -81,14 +85,19 @@ public class TimeTable extends StandardEntity {
                     if (Exceptions != null && !Exceptions.isEmpty()) {
                         long future = time + dif;
                         long exDif = Long.MAX_VALUE;
-                        for (int i = 0; i < Exceptions.size(); i++, recursiveCount++) {
-                            Session ex = Exceptions.get(i);
-                            if (isInSession(ex, future)) {
+                        boolean isException = false;
 
-                                exDif = Math.min(nextChange(time + ex.remaining(future)) + dif, exDif);
+                        for (Session ex : Exceptions) {
+                            if (isInSession(ex, future)) {
+                                isException = true;
+                                exDif = Math.min(nextChange(future), exDif);
                             }
                         }
-                        dif = Math.min(exDif, dif);
+                        if (isException) {
+                            dif = exDif + dif;
+                        } else {
+                            dif = Math.min(exDif, dif);
+                        }
                     }
                 } else {
                     throw new RuntimeException("Negative time difference: ");
@@ -125,7 +134,7 @@ public class TimeTable extends StandardEntity {
     }
 
 
-    public static class Session extends StandardEntity {
+    public static class Session {
         public long Start;
         public long End;
         public long Duration;
@@ -166,3 +175,4 @@ public class TimeTable extends StandardEntity {
         }
     }
 }
+
