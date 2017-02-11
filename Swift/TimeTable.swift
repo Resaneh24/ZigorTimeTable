@@ -27,8 +27,6 @@ class TimeTable: NSObject {
     }
 
     func nextChange(time: Int64) -> Int64 {
-        recursiveCount = 0
-
         let currentSession = findCurrentSession(time: time)
         if currentSession != nil {
             let nearestException = findNearest(exceptions, nil, time)
@@ -46,17 +44,20 @@ class TimeTable: NSObject {
             }
 
             if currentException != nil {
-                let exRemaining = currentException?.remaining(time: time)
-                if findCurrentSession(time: time + exRemaining!) != nil {
-                    return exRemaining!
+                var exRemaining = currentException!.remaining(time: time)
+                for exception in exceptions! {
+                    if isInSession(exception, time + exRemaining) {
+                        exRemaining += exception.remaining(time: time + exRemaining)
+                    }
+                }
+                if findCurrentSession(time: time + exRemaining) != nil {
+                    return exRemaining
                 }
             }
         }
 
         return findNearest(sessions, exceptions, time)
     }
-
-    var recursiveCount = 0
 
     func findNearest(_ sessions: [Session]?, _ exceptions: [Session]?, _ time: Int64) -> Int64 {
         var nearestTime = Int64.max
@@ -79,7 +80,7 @@ class TimeTable: NSObject {
                 }
 
                 var dif = s - t
-                if dif < 0 {
+                if dif <= 0 {
                     dif += session.cycle!.int64Value
                 }
                 if !session.isInPeriod(time: time + dif) {
@@ -90,15 +91,19 @@ class TimeTable: NSObject {
                     if exceptions != nil && !exceptions!.isEmpty {
                         let future = time + dif
                         var exDif = Int64.max
+                        var isException = false
 
-                        for i in 0 ..< exceptions!.count {
-                            recursiveCount += 1
-                            let ex: Session = exceptions![i]
+                        for ex in exceptions! {
                             if isInSession(ex, future) {
-                                exDif = min(nextChange(time: time + ex.remaining(time: future)) + dif, exDif)
+                                isException = true
+                                exDif = min(nextChange(time: future), exDif)
                             }
                         }
-                        dif = min(exDif, dif)
+                        if isException {
+                            dif = exDif + dif
+                        } else {
+                            dif = min(exDif, dif)
+                        }
                     }
                 } else {
                     debugPrint("TimeTable", "Negative time difference: ", dif)
