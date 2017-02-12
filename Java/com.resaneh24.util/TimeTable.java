@@ -60,7 +60,7 @@ public class TimeTable {
         long nearestTime = Long.MAX_VALUE;
         if (Sessions != null) {
             for (Session session : Sessions) {
-                if (!session.isInPeriod(time)) {
+                if (session.isFinished(time)) {
                     continue;
                 }
 
@@ -100,7 +100,7 @@ public class TimeTable {
                         }
                     }
                 } else {
-                    throw new RuntimeException("Negative time difference: ");
+                    throw new RuntimeException("Negative time difference.");
                 }
                 nearestTime = Math.min(nearestTime, dif);
             }
@@ -161,7 +161,7 @@ public class TimeTable {
             return r > 0 ? r : 0;
         }
 
-        public boolean isInPeriod(long time) {
+        public boolean isFinished(long time) {
             long e;
             if (Cycle == 0 && End == 0) {
                 e = Start + Duration;
@@ -170,8 +170,11 @@ public class TimeTable {
             } else {
                 e = End;
             }
+            return time >= e;
+        }
 
-            return time >= Start && time < e;
+        public boolean isInPeriod(long time) {
+            return time >= Start && !isFinished(time);
         }
     }
 }
