@@ -1,4 +1,7 @@
 # Zigor Time Tables
+
+[![C# Build Status](https://travis-ci.org/Resaneh24/ZigorTimeTable.svg?branch=master)](https://travis-ci.org/Resaneh24/ZigorTimeTable)
+
 Zigor time table is a model for __Offline__ calculation of recurring time tables with minimal data structure and incredible performance.
 Time tables in Zigor are completely flexible.
 
