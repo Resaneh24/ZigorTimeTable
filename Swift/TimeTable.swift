@@ -8,7 +8,18 @@
 
 import Foundation
 
-class TimeTable: NSObject {
+protocol Copyable {
+    init(instance: Self)
+}
+
+extension Copyable {
+    func clone() -> Self {
+        return Self.init(instance: self)
+    }
+}
+
+
+class TimeTable: NSObject, Copyable {
 
     var sessions: [Session]?
     var exceptions: [Session]?
@@ -50,7 +61,7 @@ class TimeTable: NSObject {
                         exRemaining += exception.remaining(time + exRemaining)
                     }
                 }
-                if findCurrentSession(time + exRemaining) != nil {
+                if findCurrentSession(time: time + exRemaining) != nil {
                     return exRemaining
                 }
             }
@@ -64,7 +75,7 @@ class TimeTable: NSObject {
         if sessions != nil {
             for session in sessions! {
 
-                if !session.isInPeriod(time: time) {
+                if !session.isInPeriod(time) {
                     continue
                 }
 
@@ -72,10 +83,10 @@ class TimeTable: NSObject {
                 var t: Int64!
 
                 if session.cycle!.int64Value <= 0 {
-                    s = session.startDate!.int64Value
+                    s = session.start!.int64Value
                     t = time
                 } else {
-                    s = session.startDate!.int64Value % session.cycle!.int64Value
+                    s = session.start!.int64Value % session.cycle!.int64Value
                     t = time % session.cycle!.int64Value
                 }
 
@@ -83,7 +94,7 @@ class TimeTable: NSObject {
                 if dif <= 0 {
                     dif += session.cycle!.int64Value
                 }
-                if !session.isInPeriod(time: time + dif) {
+                if !session.isInPeriod(time + dif) {
                     continue
                 }
 
@@ -117,7 +128,7 @@ class TimeTable: NSObject {
     }
 
     func isInSession(_ session: Session, _ currentTime: Int64) -> Bool {
-        if !session.isInPeriod(time: currentTime) {
+        if !session.isInPeriod(currentTime) {
             return false
         } else {
             return session.remaining(currentTime) > 0
@@ -141,9 +152,33 @@ class TimeTable: NSObject {
 
         return nil
     }
+
+
+    override init() {
+        super.init()
+    }
+
+    required init(instance: TimeTable) {
+        self.humanReadable = instance.humanReadable
+        if let sessionArray = instance.sessions {
+            var ses = [Session]()
+            for item in sessionArray {
+                ses.append(item.clone())
+            }
+            self.sessions = ses
+        }
+
+        if let excepArray = instance.exceptions {
+            var exc = [Session]()
+            for item in excepArray {
+                exc.append(item.clone())
+            }
+            self.sessions = exc
+        }
+    }
 }
 
-class Session: NSObject {
+class Session: NSObject, Copyable {
 
     var start: NSNumber?
     var duration: NSNumber?
@@ -151,7 +186,7 @@ class Session: NSObject {
     var cycle: NSNumber?
 
     func remaining(_ time: Int64) -> Int64 {
-        if !isInPeriod(_ time: time) {
+        if !isInPeriod(time) {
             return -1
         }
 
@@ -179,11 +214,11 @@ class Session: NSObject {
     func isFinished(_ time: Int64) -> Bool {
         var e: Int64!
         if cycle == 0 && end == 0 {
-            e = start + duration
+            e = start!.int64Value + duration!.int64Value
         } else if end == 0 {
             e = Int64.max
         } else {
-            e = end
+            e = end as! Int64
         }
 
         return time >= e
@@ -191,5 +226,16 @@ class Session: NSObject {
 
     func isInPeriod(_ time: Int64) -> Bool {
         return time >= start!.int64Value && !isFinished(time)
+    }
+    
+    override init() {
+        super.init()
+    }
+    
+    required init(instance: Session) {
+        self.start = instance.start
+        self.duration = instance.duration
+        self.end = instance.end
+        self.cycle = instance.cycle
     }
 }
