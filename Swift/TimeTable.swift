@@ -26,11 +26,11 @@ class TimeTable: NSObject {
         return (session != nil)
     }
 
-    func nextChange(time: Int64) -> Int64 {
+    func nextChange(_ time: Int64) -> Int64 {
         let currentSession = findCurrentSession(time: time)
         if currentSession != nil {
             let nearestException = findNearest(exceptions, nil, time)
-            let remaining = currentSession?.remaining(time: time)
+            let remaining = currentSession?.remaining(time)
 
             return min(remaining!, nearestException)
         } else {
@@ -44,13 +44,13 @@ class TimeTable: NSObject {
             }
 
             if currentException != nil {
-                var exRemaining = currentException!.remaining(time: time)
+                var exRemaining = currentException!.remaining(time)
                 for exception in exceptions! {
                     if isInSession(exception, time + exRemaining) {
-                        exRemaining += exception.remaining(time: time + exRemaining)
+                        exRemaining += exception.remaining(time + exRemaining)
                     }
                 }
-                if findCurrentSession(time: time + exRemaining) != nil {
+                if findCurrentSession(time + exRemaining) != nil {
                     return exRemaining
                 }
             }
@@ -96,7 +96,7 @@ class TimeTable: NSObject {
                         for ex in exceptions! {
                             if isInSession(ex, future) {
                                 isException = true
-                                exDif = min(nextChange(time: future), exDif)
+                                exDif = min(nextChange(future), exDif)
                             }
                         }
                         if isException {
@@ -120,7 +120,7 @@ class TimeTable: NSObject {
         if !session.isInPeriod(time: currentTime) {
             return false
         } else {
-            return session.remaining(time: currentTime) > 0
+            return session.remaining(currentTime) > 0
         }
     }
 
@@ -145,13 +145,13 @@ class TimeTable: NSObject {
 
 class Session: NSObject {
 
-    var startDate: NSNumber?
+    var start: NSNumber?
     var duration: NSNumber?
-    var endDate: NSNumber?
+    var end: NSNumber?
     var cycle: NSNumber?
 
-    func remaining(time: Int64) -> Int64 {
-        if !isInPeriod(time: time) {
+    func remaining(_ time: Int64) -> Int64 {
+        if !isInPeriod(_ time: time) {
             return -1
         }
 
@@ -159,10 +159,10 @@ class Session: NSObject {
         var t: Int64!
 
         if cycle!.int64Value <= 0 {
-            s = startDate!.int64Value
+            s = start!.int64Value
             t = time
         } else {
-            s = startDate!.int64Value % cycle!.int64Value
+            s = start!.int64Value % cycle!.int64Value
             t = time % cycle!.int64Value
         }
 
@@ -176,16 +176,20 @@ class Session: NSObject {
         return r > 0 ? r : 0
     }
 
-    func isInPeriod(time: Int64) -> Bool {
+    func isFinished(_ time: Int64) -> Bool {
         var e: Int64!
-        if cycle == 0 && endDate == 0 {
-            e = startDate!.int64Value + duration!.int64Value
-        } else if endDate == 0 {
+        if cycle == 0 && end == 0 {
+            e = start + duration
+        } else if end == 0 {
             e = Int64.max
         } else {
-            e = endDate!.int64Value
+            e = end
         }
-        
-        return time >= startDate!.int64Value && time < e
+
+        return time >= e
+    }
+
+    func isInPeriod(_ time: Int64) -> Bool {
+        return time >= start!.int64Value && !isFinished(time)
     }
 }
